@@ -5,11 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Expense Tracker</title>
     <link rel="stylesheet" href="style.css" />
-    <!-- jsPDF library -->
+
+    <!-- jsPDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- html2canvas library for capturing the chart as an image -->
+    <!-- html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
 
   <body>
@@ -57,7 +61,7 @@
         </div>
       </div>
 
-      <!-- Filter by Category -->
+      <!-- Filter -->
       <div class="filter">
         <label for="filter-category">Filter by Category:</label>
         <select id="filter-category">
@@ -69,8 +73,19 @@
         </select>
       </div>
 
-      <!-- Generate Monthly Report Button -->
+      <!-- Generate Report -->
       <button id="generate-monthly-report">Generate Monthly Report</button>
+    </div>
+
+    <!-- Monthly Report (Hidden until generated) -->
+    <div
+      id="report-content"
+      style="display: none; padding: 20px; background: white"
+    >
+      <h1 id="report-title">Monthly Expenses Report</h1>
+      <h3 id="report-month"></h3>
+      <canvas id="expense-chart" width="400" height="400"></canvas>
+      <h2 id="total-expense" style="color: red; margin-top: 20px"></h2>
     </div>
 
     <script src="script.js"></script>
