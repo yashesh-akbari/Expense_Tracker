@@ -4,30 +4,71 @@ document.addEventListener("DOMContentLoaded", () => {
   const totalAmount = document.getElementById("total-amount");
   const filterCategory = document.getElementById("filter-category");
   const generateMonthlyReportButton = document.getElementById("generate-monthly-report");
+  const expenseCategory = document.getElementById("expense-category");
+  const customCategoryInput = document.getElementById("custom-category");
 
   let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
-  const categories = ["Food", "Transport", "Entertainment", "Other"];
+  const predefinedCategories = ["Food", "Transport", "Entertainment", "Other"];
 
-  const expenseCategory = document.getElementById("expense-category");
-  categories.forEach((category) => {
-    const option = document.createElement("option");
-    option.value = category;
-    option.innerText = category;
-    expenseCategory.appendChild(option);
-  });
+  // Populate category dropdown
+  function populateCategoryDropdown() {
+    expenseCategory.innerHTML = '<option value="" disabled selected>Select Category</option>';
+    predefinedCategories.forEach((category) => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.innerText = category;
+      expenseCategory.appendChild(option);
+    });
+  }
 
+  populateCategoryDropdown();
+
+  // Load expenses and display
   function loadExpenses() {
     displayExpenses(expenses);
     updateTotalAmount();
   }
 
+  // Show or hide custom category input
+  expenseCategory.addEventListener("change", () => {
+    if (expenseCategory.value === "Other") {
+      customCategoryInput.style.display = "block";
+      customCategoryInput.required = true;
+    } else {
+      customCategoryInput.style.display = "none";
+      customCategoryInput.required = false;
+    }
+  });
+
+  // Snackbar Notification
+  function showSnackbar(message) {
+    let snackbar = document.getElementById("snackbar");
+    if (!snackbar) {
+      snackbar = document.createElement("div");
+      snackbar.id = "snackbar";
+      document.body.appendChild(snackbar);
+    }
+    snackbar.textContent = message;
+    snackbar.className = "show";
+    setTimeout(() => snackbar.className = snackbar.className.replace("show", ""), 3000);
+  }
+
+  // Submit form
   expenseForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const name = document.getElementById("expense-name").value;
     const amount = parseFloat(document.getElementById("expense-amount").value);
-    const category = document.getElementById("expense-category").value;
+    let category = expenseCategory.value;
     const date = document.getElementById("expense-date").value;
+
+    if (category === "Other") {
+      category = customCategoryInput.value.trim();
+      if (!category) {
+        showSnackbar("Please enter a custom category.");
+        return;
+      }
+    }
 
     const expense = {
       id: Date.now(),
@@ -41,9 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("expenses", JSON.stringify(expenses));
     displayExpenses(expenses);
     updateTotalAmount();
+    showSnackbar("Expense added!");
     expenseForm.reset();
+    customCategoryInput.style.display = "none";
   });
 
+  // Filter by category
   filterCategory.addEventListener("change", (e) => {
     const category = e.target.value;
     if (category === "All") {
@@ -54,6 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Display list
   function displayExpenses(expList) {
     expenseList.innerHTML = "";
     expList.forEach((expense) => {
@@ -72,36 +117,50 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Total update
   function updateTotalAmount() {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     totalAmount.textContent = total.toFixed(2);
   }
 
+  // Delete / Edit
   expenseList.addEventListener("click", (e) => {
+    const id = parseInt(e.target.dataset.id);
     if (e.target.classList.contains("delete-btn")) {
-      const id = parseInt(e.target.dataset.id);
       expenses = expenses.filter((exp) => exp.id !== id);
       localStorage.setItem("expenses", JSON.stringify(expenses));
       displayExpenses(expenses);
       updateTotalAmount();
+      showSnackbar("Expense deleted!");
     }
 
     if (e.target.classList.contains("edit-btn")) {
-      const id = parseInt(e.target.dataset.id);
       const expense = expenses.find((exp) => exp.id === id);
-
       document.getElementById("expense-name").value = expense.name;
       document.getElementById("expense-amount").value = expense.amount;
-      document.getElementById("expense-category").value = expense.category;
       document.getElementById("expense-date").value = expense.date;
+
+      // Handle custom category
+      if (predefinedCategories.includes(expense.category)) {
+        expenseCategory.value = expense.category;
+        customCategoryInput.style.display = "none";
+        customCategoryInput.required = false;
+      } else {
+        expenseCategory.value = "Other";
+        customCategoryInput.style.display = "block";
+        customCategoryInput.value = expense.category;
+        customCategoryInput.required = true;
+      }
 
       expenses = expenses.filter((exp) => exp.id !== id);
       localStorage.setItem("expenses", JSON.stringify(expenses));
       displayExpenses(expenses);
       updateTotalAmount();
+      showSnackbar("Ready to update. Submit the form.");
     }
   });
 
+  // Generate Monthly Report
   generateMonthlyReportButton.addEventListener("click", () => {
     const currentMonth = new Date().getMonth();
     const currentYear = new Date().getFullYear();
@@ -128,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const categories = Object.keys(categoryTotals);
     const values = Object.values(categoryTotals);
-    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#9C27B0'];
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4CAF50', '#9C27B0', '#FF9800'];
 
     document.getElementById("report-title").textContent = "Monthly Expenses Report";
     document.getElementById("report-month").textContent = `Report for: ${monthName} ${currentYear}`;
@@ -156,6 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Generate PDF
     setTimeout(() => {
       const reportContent = document.getElementById("report-content");
       reportContent.style.display = "block";
